@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Step Sequencer
+Exec=step-sequencer
+Icon=step-sequencer
+Categories=AudioVideo;Audio;
+Terminal=false
