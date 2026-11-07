@@ -7,19 +7,79 @@ on:
 
 jobs:
   build:
-    runs-on: macos-latest
+    name: ${{ matrix.target }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: linux-x64
+            runner: ubuntu-22.04
+            arch: x86_64
+          - target: linux-arm64
+            runner: ubuntu-22.04-arm
+            arch: aarch64
+          - target: darwin-x64
+            runner: macos-latest
+            arch: x86_64
+          - target: darwin-arm64
+            runner: macos-latest
+            arch: arm64
+          - target: win32-x64
+            runner: windows-latest
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
     env:
-      NOTARIZE: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+      ARCH: ${{ matrix.arch }}
+      NOTARIZE: ${{ startsWith(matrix.target, 'darwin-') && github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libgl1-mesa-dev libx11-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+          python3 -m pip install --user cmake
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Set up MSYS2
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            git
+            make
+            zip
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
 
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
           path: build/deps
-          key: deps-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('makefile') }}
+          key: deps-${{ matrix.target }}-${{ matrix.runner }}-${{ hashFiles('makefile') }}
 
-      - name: Build
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          make release
+          tar -czf build/step-sequencer-${{ matrix.target }}.tar.gz -C build step-sequencer
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        env:
+          CMAKE_GENERATOR: Ninja
+        run: |
+          make release
+          zip -j build/step-sequencer-${{ matrix.target }}.zip build/step-sequencer.exe
+
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
         run: make app
 
       - name: Import signing certificate
@@ -58,22 +118,27 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
           APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
         run: |
-          ditto -c -k --keepParent build/StepSequencer.app build/StepSequencer.zip
-          xcrun notarytool submit build/StepSequencer.zip \
+          ditto -c -k --keepParent build/StepSequencer.app build/notarize.zip
+          xcrun notarytool submit build/notarize.zip \
             --apple-id "$APPLE_ID" \
             --team-id "$APPLE_TEAM_ID" \
             --password "$APPLE_APP_PASSWORD" \
             --wait
           xcrun stapler staple build/StepSequencer.app
-          rm build/StepSequencer.zip
-          ditto -c -k --keepParent build/StepSequencer.app build/StepSequencer.zip
+          rm build/notarize.zip
 
-      - name: Upload notarized build
-        if: env.NOTARIZE == 'true'
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: ditto -c -k --keepParent build/StepSequencer.app build/step-sequencer-${{ matrix.target }}.zip
+
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
-          name: step-sequencer-macos
-          path: build/StepSequencer.zip
+          name: step-sequencer-${{ matrix.target }}
+          path: |
+            build/step-sequencer-${{ matrix.target }}.zip
+            build/step-sequencer-${{ matrix.target }}.tar.gz
+          if-no-files-found: error
 
       - name: Remove keychain
         if: always() && env.NOTARIZE == 'true'
