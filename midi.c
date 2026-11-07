@@ -1,5 +1,6 @@
 #include "midi.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -41,15 +42,14 @@ list_midi_devices (void) {
   midi_output_labels = malloc(labels_size);
   midi_output_count = 0;
 
-  strlcpy(midi_output_labels, "No Output", labels_size);
+  size_t len = snprintf(midi_output_labels, labels_size, "No Output");
 
   for (int32_t i = 0; i < num_devices; i++) {
     const PmDeviceInfo *info = Pm_GetDeviceInfo(i);
     if (info->output) {
       midi_output_devices[midi_output_count].id = i;
       midi_output_devices[midi_output_count].name = (char *) info->name;
-      strlcat(midi_output_labels, ";", labels_size);
-      strlcat(midi_output_labels, info->name, labels_size);
+      len += snprintf(midi_output_labels + len, labels_size - len, ";%s", info->name);
       midi_output_count++;
     }
   }

@@ -75,8 +75,8 @@ int selected_step = 0;
 
 uint64_t
 rand_u64 (void) {
-  uint64_t r;
-  arc4random_buf(&r, sizeof r);
+  uint64_t r = 0;
+  for (int i = 0; i < 4; i++) r = (r << 16) | (uint64_t) GetRandomValue(0, 0xFFFF);
   return r;
 }
 
