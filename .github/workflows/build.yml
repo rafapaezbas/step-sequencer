@@ -13,10 +13,10 @@ jobs:
       matrix:
         include:
           - target: linux-x64
-            runner: ubuntu-24.04
+            runner: ubuntu-22.04
             arch: x86_64
           - target: linux-arm64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-22.04-arm
             arch: aarch64
           - target: darwin-x64
             runner: macos-latest
@@ -38,8 +38,10 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake libasound2-dev libgl1-mesa-dev libx11-dev \
+          sudo apt-get install -y libasound2-dev libgl1-mesa-dev libx11-dev \
             libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+          python3 -m pip install --user cmake
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Set up MSYS2
         if: runner.os == 'Windows'
@@ -59,7 +61,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/deps
-          key: deps-${{ matrix.target }}-${{ hashFiles('makefile') }}
+          key: deps-${{ matrix.target }}-${{ matrix.runner }}-${{ hashFiles('makefile') }}
 
       - name: Build (Linux)
         if: runner.os == 'Linux'
