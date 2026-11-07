@@ -11,6 +11,12 @@ An 8-track MIDI step sequencer for macOS, written in C with [raylib](https://www
 - Click cells to toggle steps; Randomize and Clear the whole pattern
 - Choose any MIDI output device from the dropdown
 
+## Install
+
+```sh
+pear install pear://seqe7r5b1r5gkoszwspzfmetczsaqx5133qcthskh686f7iwpqpy
+```
+
 ## Build
 
 Requires macOS and [Homebrew](https://brew.sh).
