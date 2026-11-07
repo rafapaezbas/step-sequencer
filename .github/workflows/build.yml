@@ -30,7 +30,7 @@ jobs:
     runs-on: ${{ matrix.runner }}
     env:
       ARCH: ${{ matrix.arch }}
-      NOTARIZE: ${{ startsWith(matrix.target, 'darwin-') && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+      NOTARIZE: ${{ startsWith(matrix.target, 'darwin-') && github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
 
