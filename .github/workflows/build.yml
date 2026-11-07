@@ -39,7 +39,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libasound2-dev libgl1-mesa-dev libx11-dev \
-            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev imagemagick
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
           python3 -m pip install --user cmake
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
@@ -66,9 +66,8 @@ jobs:
       - name: Build (Linux)
         if: runner.os == 'Linux'
         run: |
-          make appimage
+          make release
           tar -czf build/step-sequencer-${{ matrix.target }}.tar.gz -C build step-sequencer
-          mv build/StepSequencer.AppImage build/StepSequencer-${{ matrix.target }}.AppImage
 
       - name: Build (Windows)
         if: runner.os == 'Windows'
@@ -139,7 +138,6 @@ jobs:
           path: |
             build/step-sequencer-${{ matrix.target }}.zip
             build/step-sequencer-${{ matrix.target }}.tar.gz
-            build/StepSequencer-${{ matrix.target }}.AppImage
           if-no-files-found: error
 
       - name: Remove keychain

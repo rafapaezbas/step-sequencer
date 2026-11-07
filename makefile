@@ -14,9 +14,6 @@ endif
 SRC := main.c midi.c
 BIN := build/step-sequencer$(EXE)
 APP := build/StepSequencer.app
-APPDIR := build/AppDir
-APPIMAGE := build/StepSequencer.AppImage
-ICON_DIR := $(APPDIR)/usr/share/icons/hicolor/256x256/apps
 
 DEPS := $(abspath build/deps/$(PLATFORM)-$(ARCH))
 DEPLOYMENT_TARGET := 11.0
@@ -83,23 +80,6 @@ build/icon.icns: icon.png | build
 	done
 	iconutil -c icns build/icon.iconset -o $@
 
-APPIMAGETOOL := build/tools/appimagetool-$(ARCH).AppImage
-
-appimage: release $(APPIMAGETOOL)
-	rm -rf $(APPDIR) $(APPIMAGE)
-	mkdir -p $(APPDIR)/usr/bin $(ICON_DIR)
-	cp $(BIN) $(APPDIR)/usr/bin/
-	cp StepSequencer.desktop $(APPDIR)/
-	convert icon.png -resize 256x256 $(ICON_DIR)/step-sequencer.png
-	cp $(ICON_DIR)/step-sequencer.png $(APPDIR)/
-	ln -s usr/bin/step-sequencer $(APPDIR)/AppRun
-	ARCH=$(ARCH) APPIMAGE_EXTRACT_AND_RUN=1 $(APPIMAGETOOL) $(APPDIR) $(APPIMAGE)
-
-$(APPIMAGETOOL):
-	mkdir -p build/tools
-	curl -fsSL -o $@ https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-$(ARCH).AppImage
-	chmod +x $@
-
 run: compile
 	./$(BIN)
 
@@ -109,4 +89,4 @@ build:
 format:
 	clang-format -i *.c *.h
 
-.PHONY: compile release deps app appimage run format
+.PHONY: compile release deps app run format
